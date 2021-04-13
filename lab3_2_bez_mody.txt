@@ -1,0 +1,249 @@
+DROP DATABASE IF EXISTS schedule;
+CREATE DATABASE IF NOT EXISTS schedule;
+USE schedule;
+
+/* Создать таблицу факультетов */
+CREATE TABLE IF NOT EXISTS education_type (
+    id_education_type INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    title VARCHAR(30),
+    `description` VARCHAR(30),
+    PRIMARY KEY (id_education_type)
+);
+
+/* Создать таблицу факультетов */
+CREATE TABLE IF NOT EXISTS faculties (
+    id_faculty INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(10),
+    PRIMARY KEY (id_faculty)
+);
+
+/* Создать таблицу отделов */
+CREATE TABLE IF NOT EXISTS departments (
+    id_department INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    title VARCHAR(30),
+    id_faculty INT UNSIGNED NOT NULL,
+    CONSTRAINT fk_departments__faculty__id_faculty_1 FOREIGN KEY (id_faculty)
+        REFERENCES faculties (id_faculty),
+    PRIMARY KEY (id_department)
+);
+
+/* Создать таблицу преподавателей */
+CREATE TABLE IF NOT EXISTS teachers (
+    id_teacher INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(50),
+    experience TINYINT,
+    id_department INT UNSIGNED NOT NULL,
+    CONSTRAINT fk_teachers__department__id_department_1 FOREIGN KEY (id_department)
+        REFERENCES departments (id_department),
+    PRIMARY KEY (id_teacher)
+);
+
+/* Создать таблицу групп */
+CREATE TABLE IF NOT EXISTS `groups` (
+    id_group INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(10),
+    course_number TINYINT,
+    id_faculty INT UNSIGNED NOT NULL,
+    id_education_type INT UNSIGNED NOT NULL,
+    PRIMARY KEY (id_group),
+    CONSTRAINT fk_groups__faculty__id_faculty_1 FOREIGN KEY (id_faculty)
+        REFERENCES faculties (id_faculty),
+    CONSTRAINT fk_groups__education_type__id_education_type_1 FOREIGN KEY (id_education_type)
+        REFERENCES education_type (id_education_type)
+);
+
+/* Создать таблицу корпусов */
+CREATE TABLE IF NOT EXISTS campuses (
+    id_campus INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    address VARCHAR(30),
+    `name` VARCHAR(10) UNIQUE,
+    PRIMARY KEY (id_campus)
+);
+
+/* Создать таблицу аудиторий */
+CREATE TABLE IF NOT EXISTS audiences (
+    id_audience INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `number` INT UNIQUE,
+    floors INT,
+    id_campus INT UNSIGNED NOT NULL,
+    PRIMARY KEY (id_audience),
+    CONSTRAINT fk_audiences__campuses__id_campuses_1 FOREIGN KEY (id_campus)
+        REFERENCES campuses (id_campus)
+);
+
+/* Создать таблицу предметов */
+CREATE TABLE IF NOT EXISTS `subjects` (
+    id_subject INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    title VARCHAR(30),
+    `description` VARCHAR(50),
+    PRIMARY KEY (id_subject)
+);
+
+/* Создать таблицу предметов */
+CREATE TABLE IF NOT EXISTS `types` (
+    id_type INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    #title VARCHAR(30),
+    #`description` VARCHAR(50),
+    PRIMARY KEY (id_type)
+);
+
+/* Создать таблицу времени занятий */
+CREATE TABLE IF NOT EXISTS time_number (
+    id_time_number INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    start_tim TIME,
+    #end_time TIME,
+    PRIMARY KEY (id_time_number)
+);
+
+RENAME TABLE time_number TO time_numbers;                      # Запрос на изменение названия таблицы
+
+/* Создать таблицу занятий */
+CREATE TABLE IF NOT EXISTS lessons (
+    id_lesson INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `date` DATE,
+    subgroup VARCHAR(30),
+    id_group INT UNSIGNED NOT NULL,
+    id_audience INT UNSIGNED NOT NULL,
+    id_subject INT UNSIGNED NOT NULL,
+    id_type INT UNSIGNED NOT NULL,
+    id_time_number INT UNSIGNED NOT NULL,
+    PRIMARY KEY (id_lesson),
+    CONSTRAINT fk_lessons__groups__id_group_1 FOREIGN KEY (id_group)
+        REFERENCES `groups` (id_group),
+    CONSTRAINT fk_lessons__audiences__id_audiences_1 FOREIGN KEY (id_audience)
+        REFERENCES audiences (id_audience),
+    CONSTRAINT fk_lessons__subject__id_subject_1 FOREIGN KEY (id_subject)
+        REFERENCES subjects (id_subject),
+    CONSTRAINT fk_lessons__type__id_type_1 FOREIGN KEY (id_type)
+        REFERENCES `types` (id_type),
+    CONSTRAINT fk_lessons__time_number__id_time_number_1 FOREIGN KEY (id_time_number)
+        REFERENCES time_numbers (id_time_number)
+);
+
+/* Создать таблицу соответствий сотрудников и отделов, в которых они работают */
+CREATE TABLE IF NOT EXISTS lessons_to_teachers (
+    id_teacher INT UNSIGNED NOT NULL,
+    id_lesson INT UNSIGNED NOT NULL,
+    CONSTRAINT fk_lessons_to_teachers__teachers__id_teacher_1 FOREIGN KEY (id_teacher)
+        REFERENCES teachers (id_teacher),
+    CONSTRAINT fk_lessons_to_teachers__lessons__id_lesson_1 FOREIGN KEY (id_lesson)
+        REFERENCES lessons (id_lesson),
+    PRIMARY KEY (id_teacher , id_lesson)
+);
+
+/* Создать таблицу соответствий сотрудников и отделов, в которых они работают */
+CREATE TABLE IF NOT EXISTS teachers_to_subjects (
+    id_teacher INT UNSIGNED NOT NULL,
+    id_subject INT UNSIGNED NOT NULL,
+    CONSTRAINT fk_teachers_to_subjects__teachers__id_teacher_1 FOREIGN KEY (id_teacher)
+        REFERENCES teachers (id_teacher),
+    CONSTRAINT fk_teachers_to_subjects__subjects__id_subject_1 FOREIGN KEY (id_subject)
+        REFERENCES lessons (id_subject),
+    PRIMARY KEY (id_teacher , id_subject)
+);
+
+
+
+/* Запросы на изменение таблиц */
+ALTER TABLE time_numbers RENAME COLUMN start_tim TO start_time;
+ALTER TABLE time_numbers ADD COLUMN end_time TIME;
+ALTER TABLE `types` ADD COLUMN title VARCHAR(30);
+ALTER TABLE `types` ADD COLUMN `description` VARCHAR(50);
+ALTER TABLE audiences MODIFY COLUMN floors TINYINT;
+ALTER TABLE `groups` MODIFY COLUMN `name` VARCHAR(10) UNIQUE;
+ALTER TABLE faculties MODIFY COLUMN `name` VARCHAR(10) NOT NULL;
+ALTER TABLE campuses MODIFY COLUMN address VARCHAR(30) UNIQUE;
+ALTER TABLE time_numbers ADD COLUMN end_time_numbers TIME;
+ALTER TABLE time_numbers DROP COLUMN end_time_numbers;
+ALTER TABLE lessons ADD COLUMN exp INT;
+ALTER TABLE lessons DROP COLUMN exp;
+
+
+
+
+/* Запросы на добавление данных */
+INSERT INTO campuses
+		(address, `name`)
+VALUES  ('Мира 152', 'высотный'),
+		('Мира 150', 'А');
+
+
+INSERT INTO audiences
+		(`number`, floors, id_campus)
+VALUES  (25, 5, 1),
+		(26, 5, 1),
+        (12, 2, 2);
+        
+        
+INSERT INTO education_type
+		(title, `description`)
+VALUES  ('очное обучение', 'пары каждую неделю'),
+		('заочное обучение', 'сдача работ в указанный срок');
+       
+       
+INSERT INTO faculties
+		(`name`)
+VALUES  ('ФЭИИТ'),
+		('ЭТ');
+        
+        
+INSERT INTO `groups`
+		(`name`, course_number, id_faculty, id_education_type )
+VALUES  ('ИТ-25', 1, 1, 1),
+		('ИТ-27', 2, 1, 1);
+        
+
+INSERT INTO time_numbers
+		(start_time, end_time)
+VALUES  ('8:00', '9:30'),
+		('9:40', '11:10');
+      
+
+INSERT INTO `subjects`
+		(title, `description`)
+VALUES  ('Программирование', 'основы программирования на языке C++'),
+		('Электротехника', 'электротехника.начальный курс');
+
+
+INSERT INTO `types`
+		(title, `description`)
+VALUES  ('лекция', 'преподаватель объясняет материал'),
+		('практика', 'закрепление пройденного материала'),
+        ('лабораторная работа', 'самостоятельная работа студента');
+
+
+INSERT INTO lessons
+		(`date`, subgroup, id_group, id_audience, id_subject, id_type, id_time_number)
+VALUES  ('2021-04-14', 'утренняя', 1, 1, 1, 1, 1),
+		('2021-04-14', 'вечерняя', 1, 1, 1, 1, 2),
+        ('2021-04-15', 'вечерняя', 2, 1, 2, 1, 2);
+
+
+INSERT INTO departments
+		(title, id_faculty)
+VALUES  ('компьютерное проектирование', 1),
+		('схемотехника', 2);
+
+
+INSERT INTO teachers
+		(`name`, experience, id_department)
+VALUES  ('Иванов П.Г.', 3, 1),
+		('Петров И.И.', 6, 2);
+
+
+INSERT INTO lessons_to_teachers
+		(id_teacher, id_lesson)
+VALUES  (1, 1),
+		(2, 2);
+        
+
+INSERT INTO teachers_to_subjects
+		(id_teacher, id_subject)
+VALUES  (1, 1),
+		(2, 2);
+
+
+
+/* Скрипты удаления таблиц и БД */
+/* DROP TABLE animals;
+DROP DATABASE farm; */
